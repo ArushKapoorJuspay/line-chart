@@ -314,7 +314,7 @@ function LineChart() {
         </g>
 
         {/* Left Y ticks */}
-        <g stroke="#e2e8f0" stroke-width="2">
+        <g stroke="#e2e8f0" strokeWidth="2">
           <line x1="90" y1="450" x2="80" y2="450" />
           <line x1="90" y1="374" x2="80" y2="374" />
           <line x1="90" y1="298" x2="80" y2="298" />
@@ -344,7 +344,7 @@ function LineChart() {
         </g>
 
         {/* Right Y ticks */}
-        <g stroke="#e2e8f0" stroke-width="2">
+        <g stroke="#e2e8f0" strokeWidth="2">
           <line x1="810" y1="450" x2="820" y2="450" />
           <line x1="810" y1="374" x2="820" y2="374" />
           <line x1="810" y1="298" x2="820" y2="298" />
@@ -374,7 +374,7 @@ function LineChart() {
         </g>
 
         {/* X ticks */}
-        <g stroke="#e2e8f0" stroke-width="2">
+        <g stroke="#e2e8f0" strokeWidth="2">
           <line x1="90" y1="450" x2="90" y2="460" />
           <line x1="210" y1="450" x2="210" y2="460" />
           <line x1="330" y1="450" x2="330" y2="460" />

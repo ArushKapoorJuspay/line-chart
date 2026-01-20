@@ -38,6 +38,79 @@ function LineChart() {
     setTooltip((prev) => ({ ...prev, visible: false }));
   };
 
+  const data = [
+    { day: "D1", txns: 10, amount: 20000 },
+    { day: "D2", txns: 20, amount: 30000 },
+    { day: "D3", txns: 30, amount: 40000 },
+    { day: "D4", txns: 50, amount: 70000 },
+    { day: "D5", txns: 40, amount: 60000 },
+    { day: "D6", txns: 60, amount: 80000 },
+    { day: "D7", txns: 100, amount: 90000 },
+  ];
+
+  const SVG_WIDTH = 900;
+  const SVG_HEIGHT = 520;
+
+  const chart = {
+    left: 90,
+    right: 810,
+    top: 70,
+    bottom: 450,
+  };
+
+  const plotWidth = chart.right - chart.left; // 720
+  const plotHeight = chart.bottom - chart.top; // 380
+
+  // Transactions axis (left)
+  const txMin = 0;
+  const rawTxMax = Math.max(...data.map((d) => d.txns));
+  const txMax = Math.ceil(rawTxMax / 10) * 10 || 10; // round to nearest 10
+
+  // Amount axis (right)
+  const amtMin = 0;
+  const rawAmtMax = Math.max(...data.map((d) => d.amount));
+  const amtMax = Math.ceil((rawAmtMax * 1.1) / 10000) * 10000 || 10000; // add 10% padding & round to 10k
+
+  const yTickCount = 6; // like 0,20,40,60,80,100
+
+  const xStep = data.length > 1 ? plotWidth / (data.length - 1) : 0;
+
+  const getX = (i) => chart.left + i * xStep;
+
+  const getYForTxns = (txns) => {
+    const ratio = (txns - txMin) / (txMax - txMin); // 0..1
+    return chart.bottom - ratio * plotHeight;
+  };
+
+  const getYForAmount = (amount) => {
+    const ratio = (amount - amtMin) / (amtMax - amtMin); // 0..1
+    return chart.bottom - ratio * plotHeight;
+  };
+
+  const txTickValues = Array.from({ length: yTickCount }, (_, idx) => {
+    return txMin + (idx * (txMax - txMin)) / (yTickCount - 1);
+  });
+
+  const amtTickValues = Array.from({ length: yTickCount }, (_, idx) => {
+    return amtMin + (idx * (amtMax - amtMin)) / (yTickCount - 1);
+  });
+
+  const transactionsPath = data
+    .map((d, i) => `${i === 0 ? "M" : "L"} ${getX(i)} ${getYForTxns(d.txns)}`)
+    .join(" ");
+
+  const amountPath = data
+    .map(
+      (d, i) => `${i === 0 ? "M" : "L"} ${getX(i)} ${getYForAmount(d.amount)}`
+    )
+    .join(" ");
+
+  // Formatting amounts in tooltip and axis
+  const formatAmount = (value) => {
+    if (value === 0) return "₹0";
+    return `₹${Math.round(value / 1000)}k`;
+  };
+
   return (
     <div ref={wrapperRef} className="m-4 p-4 border-4 relative max-w-225">
       {/* Tooltip overlay (HTML) */}
@@ -87,146 +160,82 @@ function LineChart() {
       {/* SVG */}
       <svg
         width="100%"
-        viewBox="0 0 900 520"
+        viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
         preserveAspectRatio="xMidYMid meet"
         xmlns="http://www.w3.org/2000/svg"
         className="block max-w-full"
       >
         {/* Background */}
-        <rect x="0" y="0" width="900" height="520" fill="#0b1020" rx="16" />
+        <rect
+          x="0"
+          y="0"
+          width={SVG_WIDTH}
+          height={SVG_HEIGHT}
+          fill="#0b1020"
+          rx="16"
+        />
 
         {/* Gridlines */}
         <g opacity="0.25">
-          <line
-            x1="90"
-            y1="450"
-            x2="810"
-            y2="450"
-            stroke="#94a3b8"
-            strokeWidth="1"
-          />
-          <line
-            x1="90"
-            y1="374"
-            x2="810"
-            y2="374"
-            stroke="#94a3b8"
-            strokeWidth="1"
-          />
-          <line
-            x1="90"
-            y1="298"
-            x2="810"
-            y2="298"
-            stroke="#94a3b8"
-            strokeWidth="1"
-          />
-          <line
-            x1="90"
-            y1="222"
-            x2="810"
-            y2="222"
-            stroke="#94a3b8"
-            strokeWidth="1"
-          />
-          <line
-            x1="90"
-            y1="146"
-            x2="810"
-            y2="146"
-            stroke="#94a3b8"
-            strokeWidth="1"
-          />
-          <line
-            x1="90"
-            y1="70"
-            x2="810"
-            y2="70"
-            stroke="#94a3b8"
-            strokeWidth="1"
-          />
+          {/* Horizontal gridlines (use tx ticks for y positions) */}
+          {txTickValues.map((t) => {
+            const y = getYForTxns(t);
+            return (
+              <line
+                key={`h-${t}`}
+                x1={chart.left}
+                y1={y}
+                x2={chart.right}
+                y2={y}
+                stroke="#94a3b8"
+                strokeWidth="1"
+              />
+            );
+          })}
 
-          <line
-            x1="90"
-            y1="70"
-            x2="90"
-            y2="450"
-            stroke="#94a3b8"
-            strokeWidth="1"
-          />
-          <line
-            x1="210"
-            y1="70"
-            x2="210"
-            y2="450"
-            stroke="#94a3b8"
-            strokeWidth="1"
-          />
-          <line
-            x1="330"
-            y1="70"
-            x2="330"
-            y2="450"
-            stroke="#94a3b8"
-            strokeWidth="1"
-          />
-          <line
-            x1="450"
-            y1="70"
-            x2="450"
-            y2="450"
-            stroke="#94a3b8"
-            strokeWidth="1"
-          />
-          <line
-            x1="570"
-            y1="70"
-            x2="570"
-            y2="450"
-            stroke="#94a3b8"
-            strokeWidth="1"
-          />
-          <line
-            x1="690"
-            y1="70"
-            x2="690"
-            y2="450"
-            stroke="#94a3b8"
-            strokeWidth="1"
-          />
-          <line
-            x1="810"
-            y1="70"
-            x2="810"
-            y2="450"
-            stroke="#94a3b8"
-            strokeWidth="1"
-          />
+          {/* Vertical gridlines (based on number of days) */}
+          {data.map((_, i) => {
+            const x = getX(i);
+            return (
+              <line
+                key={`v-${i}`}
+                x1={x}
+                y1={chart.top}
+                x2={x}
+                y2={chart.bottom}
+                stroke="#94a3b8"
+                strokeWidth="1"
+              />
+            );
+          })}
         </g>
 
         {/* Axes */}
         <g>
+          {/* X-axis */}
           <line
-            x1="90"
-            y1="450"
-            x2="810"
-            y2="450"
+            x1={chart.left}
+            y1={chart.bottom}
+            x2={chart.right}
+            y2={chart.bottom}
             stroke="#e2e8f0"
             strokeWidth="2"
           />
+          {/* Left Y-axis */}
           <line
-            x1="90"
-            y1="70"
-            x2="90"
-            y2="450"
+            x1={chart.left}
+            y1={chart.top}
+            x2={chart.left}
+            y2={chart.bottom}
             stroke="#e2e8f0"
             strokeWidth="2"
           />
+          {/* Right Y-axis */}
           <line
-            x1="810"
-            y1="70"
-            x2="810"
-            y2="450"
+            x1={chart.right}
+            y1={chart.top}
+            x2={chart.right}
+            y2={chart.bottom}
             stroke="#e2e8f0"
             strokeWidth="2"
           />
@@ -234,7 +243,7 @@ function LineChart() {
 
         {/* Title */}
         <text
-          x="90"
+          x={chart.left}
           y="40"
           fill="#e2e8f0"
           fontSize="18"
@@ -270,7 +279,7 @@ function LineChart() {
         </text>
 
         <text
-          x="450"
+          x={(chart.left + chart.right) / 2}
           y="500"
           fill="#cbd5e1"
           fontSize="14"
@@ -315,101 +324,104 @@ function LineChart() {
 
         {/* Left Y ticks */}
         <g stroke="#e2e8f0" strokeWidth="2">
-          <line x1="90" y1="450" x2="80" y2="450" />
-          <line x1="90" y1="374" x2="80" y2="374" />
-          <line x1="90" y1="298" x2="80" y2="298" />
-          <line x1="90" y1="222" x2="80" y2="222" />
-          <line x1="90" y1="146" x2="80" y2="146" />
-          <line x1="90" y1="70" x2="80" y2="70" />
+          {txTickValues.map((t) => {
+            const y = getYForTxns(t);
+            return (
+              <line
+                key={`ly-${t}`}
+                x1={chart.left}
+                y1={y}
+                x2={chart.left - 10}
+                y2={y}
+              />
+            );
+          })}
         </g>
+
         <g fill="#cbd5e1" fontSize="12" fontFamily="Inter, Arial, sans-serif">
-          <text x="70" y="454" textAnchor="end">
-            0
-          </text>
-          <text x="70" y="378" textAnchor="end">
-            20
-          </text>
-          <text x="70" y="302" textAnchor="end">
-            40
-          </text>
-          <text x="70" y="226" textAnchor="end">
-            60
-          </text>
-          <text x="70" y="150" textAnchor="end">
-            80
-          </text>
-          <text x="70" y="74" textAnchor="end">
-            100
-          </text>
+          {txTickValues.map((t) => {
+            const y = getYForTxns(t);
+            return (
+              <text
+                key={`lyt-${t}`}
+                x={chart.left - 20}
+                y={y + 4}
+                textAnchor="end"
+              >
+                {Math.round(t)}
+              </text>
+            );
+          })}
         </g>
 
         {/* Right Y ticks */}
         <g stroke="#e2e8f0" strokeWidth="2">
-          <line x1="810" y1="450" x2="820" y2="450" />
-          <line x1="810" y1="374" x2="820" y2="374" />
-          <line x1="810" y1="298" x2="820" y2="298" />
-          <line x1="810" y1="222" x2="820" y2="222" />
-          <line x1="810" y1="146" x2="820" y2="146" />
-          <line x1="810" y1="70" x2="820" y2="70" />
+          {amtTickValues.map((a) => {
+            const y = getYForAmount(a);
+            return (
+              <line
+                key={`ry-${a}`}
+                x1={chart.right}
+                y1={y}
+                x2={chart.right + 10}
+                y2={y}
+              />
+            );
+          })}
         </g>
+
         <g fill="#cbd5e1" fontSize="12" fontFamily="Inter, Arial, sans-serif">
-          <text x="830" y="454" textAnchor="start">
-            ₹0
-          </text>
-          <text x="830" y="378" textAnchor="start">
-            ₹20k
-          </text>
-          <text x="830" y="302" textAnchor="start">
-            ₹40k
-          </text>
-          <text x="830" y="226" textAnchor="start">
-            ₹60k
-          </text>
-          <text x="830" y="150" textAnchor="start">
-            ₹80k
-          </text>
-          <text x="830" y="74" textAnchor="start">
-            ₹100k
-          </text>
+          {amtTickValues.map((a) => {
+            const y = getYForAmount(a);
+            return (
+              <text
+                key={`ryt-${a}`}
+                x={chart.right + 20}
+                y={y + 4}
+                textAnchor="start"
+              >
+                {formatAmount(Math.round(a))}
+              </text>
+            );
+          })}
         </g>
 
         {/* X ticks */}
         <g stroke="#e2e8f0" strokeWidth="2">
-          <line x1="90" y1="450" x2="90" y2="460" />
-          <line x1="210" y1="450" x2="210" y2="460" />
-          <line x1="330" y1="450" x2="330" y2="460" />
-          <line x1="450" y1="450" x2="450" y2="460" />
-          <line x1="570" y1="450" x2="570" y2="460" />
-          <line x1="690" y1="450" x2="690" y2="460" />
-          <line x1="810" y1="450" x2="810" y2="460" />
+          {data.map((d, i) => {
+            const x = getX(i);
+            return (
+              <line
+                key={`xt-${d.day}`}
+                x1={x}
+                y1={chart.bottom}
+                x2={x}
+                y2={chart.bottom + 10}
+              />
+            );
+          })}
         </g>
+
+        {/* X labels */}
         <g fill="#cbd5e1" fontSize="12" fontFamily="Inter, Arial, sans-serif">
-          <text x="90" y="475" textAnchor="middle">
-            D1
-          </text>
-          <text x="210" y="475" textAnchor="middle">
-            D2
-          </text>
-          <text x="330" y="475" textAnchor="middle">
-            D3
-          </text>
-          <text x="450" y="475" textAnchor="middle">
-            D4
-          </text>
-          <text x="570" y="475" textAnchor="middle">
-            D5
-          </text>
-          <text x="690" y="475" textAnchor="middle">
-            D6
-          </text>
-          <text x="810" y="475" textAnchor="middle">
-            D7
-          </text>
+          {data.map((d, i) => {
+            const x = getX(i);
+            return (
+              <text
+                key={`xl-${d.day}`}
+                x={x}
+                y={chart.bottom + 25}
+                textAnchor="middle"
+              >
+                {d.day}
+              </text>
+            );
+          })}
         </g>
 
         {/* Lines */}
         <path
-          d="M 90 412 L 210 374 L 330 336 L 450 260 L 570 298 L 690 222 L 810 184"
+          d={transactionsPath}
           fill="none"
           stroke="#22c55e"
           strokeWidth="3"
@@ -418,7 +430,7 @@ function LineChart() {
         />
 
         <path
-          d="M 90 374 L 210 336 L 330 298 L 450 184 L 570 222 L 690 146 L 810 108"
+          d={amountPath}
           fill="none"
           stroke="#60a5fa"
           strokeWidth="3"
@@ -426,235 +438,50 @@ function LineChart() {
           strokeLinejoin="round"
         />
 
-        {/* --- ALL POINTS --- */}
+        {/* Points */}
+        {data.map((d, i) => {
+          const x = getX(i);
 
-        {/* Transactions points */}
-        <circle
-          cx="90"
-          cy="412"
-          r="6"
-          fill="#22c55e"
-          style={{ cursor: "pointer" }}
-          onMouseEnter={(e) =>
-            showTooltip(e, {
-              title: "D1 • Transactions",
-              value: "10 txns",
-              color: "#22c55e",
-            })
-          }
-          onMouseMove={moveTooltip}
-          onMouseLeave={hideTooltip}
-        />
-        <circle
-          cx="210"
-          cy="374"
-          r="6"
-          fill="#22c55e"
-          style={{ cursor: "pointer" }}
-          onMouseEnter={(e) =>
-            showTooltip(e, {
-              title: "D2 • Transactions",
-              value: "20 txns",
-              color: "#22c55e",
-            })
-          }
-          onMouseMove={moveTooltip}
-          onMouseLeave={hideTooltip}
-        />
-        <circle
-          cx="330"
-          cy="336"
-          r="6"
-          fill="#22c55e"
-          style={{ cursor: "pointer" }}
-          onMouseEnter={(e) =>
-            showTooltip(e, {
-              title: "D3 • Transactions",
-              value: "30 txns",
-              color: "#22c55e",
-            })
-          }
-          onMouseMove={moveTooltip}
-          onMouseLeave={hideTooltip}
-        />
-        <circle
-          cx="450"
-          cy="260"
-          r="6"
-          fill="#22c55e"
-          style={{ cursor: "pointer" }}
-          onMouseEnter={(e) =>
-            showTooltip(e, {
-              title: "D4 • Transactions",
-              value: "50 txns",
-              color: "#22c55e",
-            })
-          }
-          onMouseMove={moveTooltip}
-          onMouseLeave={hideTooltip}
-        />
-        <circle
-          cx="570"
-          cy="298"
-          r="6"
-          fill="#22c55e"
-          style={{ cursor: "pointer" }}
-          onMouseEnter={(e) =>
-            showTooltip(e, {
-              title: "D5 • Transactions",
-              value: "40 txns",
-              color: "#22c55e",
-            })
-          }
-          onMouseMove={moveTooltip}
-          onMouseLeave={hideTooltip}
-        />
-        <circle
-          cx="690"
-          cy="222"
-          r="6"
-          fill="#22c55e"
-          style={{ cursor: "pointer" }}
-          onMouseEnter={(e) =>
-            showTooltip(e, {
-              title: "D6 • Transactions",
-              value: "60 txns",
-              color: "#22c55e",
-            })
-          }
-          onMouseMove={moveTooltip}
-          onMouseLeave={hideTooltip}
-        />
-        <circle
-          cx="810"
-          cy="184"
-          r="6"
-          fill="#22c55e"
-          style={{ cursor: "pointer" }}
-          onMouseEnter={(e) =>
-            showTooltip(e, {
-              title: "D7 • Transactions",
-              value: "70 txns",
-              color: "#22c55e",
-            })
-          }
-          onMouseMove={moveTooltip}
-          onMouseLeave={hideTooltip}
-        />
+          return (
+            <g key={`pt-${d.day}`}>
+              {/* Transactions point */}
+              <circle
+                cx={x}
+                cy={getYForTxns(d.txns)}
+                r="6"
+                fill="#22c55e"
+                style={{ cursor: "pointer" }}
+                onMouseEnter={(e) =>
+                  showTooltip(e, {
+                    title: `${d.day} • Transactions`,
+                    value: `${d.txns} txns`,
+                    color: "#22c55e",
+                  })
+                }
+                onMouseMove={moveTooltip}
+                onMouseLeave={hideTooltip}
+              />
 
-        {/* Amount points */}
-        <circle
-          cx="90"
-          cy="374"
-          r="6"
-          fill="#60a5fa"
-          style={{ cursor: "pointer" }}
-          onMouseEnter={(e) =>
-            showTooltip(e, {
-              title: "D1 • Amount",
-              value: "₹20k",
-              color: "#60a5fa",
-            })
-          }
-          onMouseMove={moveTooltip}
-          onMouseLeave={hideTooltip}
-        />
-        <circle
-          cx="210"
-          cy="336"
-          r="6"
-          fill="#60a5fa"
-          style={{ cursor: "pointer" }}
-          onMouseEnter={(e) =>
-            showTooltip(e, {
-              title: "D2 • Amount",
-              value: "₹30k",
-              color: "#60a5fa",
-            })
-          }
-          onMouseMove={moveTooltip}
-          onMouseLeave={hideTooltip}
-        />
-        <circle
-          cx="330"
-          cy="298"
-          r="6"
-          fill="#60a5fa"
-          style={{ cursor: "pointer" }}
-          onMouseEnter={(e) =>
-            showTooltip(e, {
-              title: "D3 • Amount",
-              value: "₹40k",
-              color: "#60a5fa",
-            })
-          }
-          onMouseMove={moveTooltip}
-          onMouseLeave={hideTooltip}
-        />
-        <circle
-          cx="450"
-          cy="184"
-          r="6"
-          fill="#60a5fa"
-          style={{ cursor: "pointer" }}
-          onMouseEnter={(e) =>
-            showTooltip(e, {
-              title: "D4 • Amount",
-              value: "₹70k",
-              color: "#60a5fa",
-            })
-          }
-          onMouseMove={moveTooltip}
-          onMouseLeave={hideTooltip}
-        />
-        <circle
-          cx="570"
-          cy="222"
-          r="6"
-          fill="#60a5fa"
-          style={{ cursor: "pointer" }}
-          onMouseEnter={(e) =>
-            showTooltip(e, {
-              title: "D5 • Amount",
-              value: "₹60k",
-              color: "#60a5fa",
-            })
-          }
-          onMouseMove={moveTooltip}
-          onMouseLeave={hideTooltip}
-        />
-        <circle
-          cx="690"
-          cy="146"
-          r="6"
-          fill="#60a5fa"
-          style={{ cursor: "pointer" }}
-          onMouseEnter={(e) =>
-            showTooltip(e, {
-              title: "D6 • Amount",
-              value: "₹80k",
-              color: "#60a5fa",
-            })
-          }
-          onMouseMove={moveTooltip}
-          onMouseLeave={hideTooltip}
-        />
-        <circle
-          cx="810"
-          cy="108"
-          r="6"
-          fill="#60a5fa"
-          style={{ cursor: "pointer" }}
-          onMouseEnter={(e) =>
-            showTooltip(e, {
-              title: "D7 • Amount",
-              value: "₹90k",
-              color: "#60a5fa",
-            })
-          }
-          onMouseMove={moveTooltip}
-          onMouseLeave={hideTooltip}
-        />
+              {/* Amount point */}
+              <circle
+                cx={x}
+                cy={getYForAmount(d.amount)}
+                r="6"
+                fill="#60a5fa"
+                style={{ cursor: "pointer" }}
+                onMouseEnter={(e) =>
+                  showTooltip(e, {
+                    title: `${d.day} • Amount`,
+                    value: formatAmount(d.amount),
+                    color: "#60a5fa",
+                  })
+                }
+                onMouseMove={moveTooltip}
+                onMouseLeave={hideTooltip}
+              />
+            </g>
+          );
+        })}
       </svg>
     </div>
   );
